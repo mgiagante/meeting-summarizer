@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
 
         let body = serde_json::json!({
             "model": "gemma",
-            "prompt": format!("Summarize the following part of a transcript:\n{}", chunk),
+            "prompt": format!("Thoroughly summarize the following part of a transcript:\n{}", chunk),
         });
 
         let res = client
