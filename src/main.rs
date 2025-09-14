@@ -7,6 +7,11 @@ use std::path::Path;
 use tokio;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
+/// Pretty-print a transcript with one line per segment
+fn pretty_transcript(segments: &[String]) -> String {
+    segments.join("\n")
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     // Parse audio file from argv
@@ -42,17 +47,20 @@ async fn main() -> Result<()> {
 
     state.full(params, &audio_data)?;
     let num_segments = state.full_n_segments();
-    let mut transcription = String::new();
+
+    let mut segments = Vec::new();
 
     for i in 0..num_segments {
         if let Some(segment) = state.get_segment(i) {
-            let text = segment.to_str_lossy().unwrap_or_default();
-            transcription.push_str(&text);
-            transcription.push(' ');
+            let text = segment.to_str_lossy().unwrap_or_default().to_string();
+            segments.push(text);
         }
     }
 
-    println!("--- TRANSCRIPTION ---\n{}", transcription);
+    let transcription = segments.join(" ");
+    let pretty_transcript = pretty_transcript(&segments);
+
+    println!("--- TRANSCRIPTION ---\n{}", pretty_transcript);
 
     // 4. Load summarization prompt template
     let prompt_template =
@@ -88,7 +96,7 @@ async fn main() -> Result<()> {
     println!("--- FINAL SUMMARY ---\n{}", summary);
 
     // 6. Save transcript and summary
-    fs::write(&transcript_path, transcription)?;
+    fs::write(&transcript_path, pretty_transcript)?;
     fs::write(&summary_path, summary)?;
 
     println!("Transcript saved to {}", transcript_path);
